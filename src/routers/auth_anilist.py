@@ -18,6 +18,12 @@ security = HTTPBearer()
 
 @router.get("/", response_class=RedirectResponse)
 async def get_code():
+    """
+    Перенаправляет на Anilist для авторизации,\n
+    после чего Anilist перенаправляет на /callback вместе с кодом авторизации.\n
+    redirect_uri указан в настройках Anilist.\n
+    **Swagger Ui не поддерживает перенаправление из-за CORS.**
+    """
     client_id = '7698'
     redirect_uri = 'https://tolocalhost.com/auth_anilist/callback'
     response_type = 'code'
@@ -26,11 +32,14 @@ async def get_code():
 
 
 @router.get('/callback')
-async def add_code(code: str, session: Session = Depends(get_db),
-                      Authorize: AuthJWT = Depends(), auth: HTTPAuthorizationCredentials = Security(security)):
+async def set_code(code: str, session: Session = Depends(get_db),
+                   Authorize: AuthJWT = Depends(), auth: HTTPAuthorizationCredentials = Security(security)):
+    """
+    Устанавливает поле user.anilist_auth_code для дальнейшего получения access token пользователем.
+    """
     Authorize.jwt_required()
     add_anilist_code(anilist_auth_code=code, user_id=int(Authorize.get_jwt_subject()), s=session)
-    return code #####################
+    return code
 
 
 @router.get('/token')

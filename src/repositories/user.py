@@ -5,7 +5,7 @@ import string
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from src.models.user import UserCreate, UserUpdate, UserAnilistAuthCode
+from src.models.user import UserCreate, UserUpdate
 from src.models.token import Token
 from src.db.user import User
 
@@ -24,8 +24,8 @@ def validate_password(password: str, hashed_password: str):
 
 def create_user_token(id: int, Authorize):
     access_token = Authorize.create_access_token(subject=id)
-    refresh_token = Authorize.create_refresh_token(subject=id)
-    return Token(access_token=access_token, refresh_token=refresh_token)
+    Authorize.set_access_cookies(access_token)
+    return Token(access_token=access_token)
 
 
 def create_user(u: UserCreate, s: Session):

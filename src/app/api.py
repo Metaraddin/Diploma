@@ -44,7 +44,8 @@ settings = get_settings()
 class JWTSettings(BaseModel):
     authjwt_secret_key: str = settings.authjwt_secret_key
     authjwt_access_token_expires: int = timedelta(hours=2)
-    authjwt_refresh_token_expires: int = timedelta(days=30)
+    authjwt_token_location: set = {"cookies"}
+    authjwt_cookie_csrf_protect: bool = False
 
 
 @AuthJWT.load_config
