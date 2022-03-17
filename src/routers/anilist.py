@@ -3,7 +3,6 @@ from fastapi.security import HTTPBearer
 from typing import Optional
 import requests
 
-
 router = APIRouter(prefix="/anilist", tags=["Anilist"])
 security = HTTPBearer()
 
@@ -17,11 +16,8 @@ async def get_current_user_id(anilist_access_token: Optional[str] = Cookie(None)
         }
     }
     '''
-
     url = 'https://graphql.anilist.co'
-    headers = {
-        'Authorization': "Bearer " + anilist_access_token
-    }
+    headers = {'Authorization': "Bearer " + anilist_access_token}
 
     response = requests.post(url, json={'query': query}, headers=headers)
     return response.json()
@@ -54,12 +50,8 @@ async def get_rec(page: int = 1, per_page: int = 50, anilist_access_token: Optio
         'page': page,
         'perPage': per_page
     }
-
     url = 'https://graphql.anilist.co'
-    headers = {
-        'Authorization': "Bearer " + anilist_access_token
-    }
+    headers = {'Authorization': "Bearer " + anilist_access_token}
 
     response = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
     return response.json()
-

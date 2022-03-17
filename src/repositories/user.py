@@ -5,7 +5,7 @@ import string
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from src.models.user import UserCreate, UserUpdate
+from src.models.user import UserCreate, UserUpdate, UserAnilistAuthCode
 from src.models.token import Token
 from src.db.user import User
 
@@ -98,3 +98,16 @@ def delete_avatar_id(user_id: int, s: Session):
     s.add(user)
     s.commit()
     return user
+
+
+def add_anilist_code(anilist_auth_code: str, user_id: int, s: Session):
+    user = s.query(User).filter(User.id == user_id).first()
+    user.anilist_auth_code = anilist_auth_code
+
+    s.add(user)
+    s.commit()
+    return anilist_auth_code
+
+
+def get_anilist_code(user_id: int, s: Session):
+    return s.query(User.anilist_auth_code).filter(User.id == user_id).first()
