@@ -11,6 +11,8 @@ from fastapi_jwt_auth import AuthJWT
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
+from httpx import AsyncClient
+
 
 router = APIRouter(prefix="/auth_anilist", tags=["Anilist Auth"])
 security = HTTPBearer()
@@ -32,11 +34,26 @@ async def get_code():
 
 
 @router.get('/callback')
+async def callback(code: str, access_token_cookie: Optional[str] = Cookie(None)):
+    """
+    Функция обратного вызова.
+    \nВызывается без авторизации, потому делает запрос на другой эндпоинт с токеном из куки.
+    """
+    url = 'http://localhost:8000/auth_anilist/test'
+    # url = 'http://127.0.0.1:8000/auth_anilist/test/'
+    # response = requests.post(url, json={'code': code}, headers={'Authorization': "Bearer " + access_token_cookie})
+    client = AsyncClient()
+    response = await client.get(url, params={'code': code}, headers={'Authorization': "Bearer " + access_token_cookie})
+    return response.text
+
+
+@router.get("/test", response_class=RedirectResponse)
 async def set_code(code: str, session: Session = Depends(get_db),
                    Authorize: AuthJWT = Depends(), auth: HTTPAuthorizationCredentials = Security(security)):
     """
     Устанавливает поле user.anilist_auth_code для дальнейшего получения access token пользователем.
     """
+    print("TTTTEEESSSTTT")
     Authorize.jwt_required()
     add_anilist_code(anilist_auth_code=code, user_id=int(Authorize.get_jwt_subject()), s=session)
     return code
