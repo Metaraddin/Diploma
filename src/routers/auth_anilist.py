@@ -6,6 +6,7 @@ from typing import Optional
 from src.repositories.user import add_anilist_code, get_anilist_code
 from src.app.dependencies import get_db
 import requests
+from jose import jwt
 
 from fastapi_jwt_auth import AuthJWT
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -42,9 +43,8 @@ async def callback(code: str, access_token_cookie: Optional[str] = Cookie(None))
     url = 'http://localhost:8000/auth_anilist/test'
     # url = 'http://127.0.0.1:8000/auth_anilist/test/'
     # response = requests.post(url, json={'code': code}, headers={'Authorization': "Bearer " + access_token_cookie})
-    client = AsyncClient()
-    response = await client.get(url, params={'code': code}, headers={'Authorization': "Bearer " + access_token_cookie})
-    return response.text
+    user = jwt.decode(access_token_cookie, 'sercet', algorithms=["HS256"])
+    return user
 
 
 @router.get("/test", response_class=RedirectResponse)
