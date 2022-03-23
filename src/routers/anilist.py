@@ -30,7 +30,9 @@ async def get_current_user_id(session: Session = Depends(get_db), Authorize: Aut
 
 
 @router.get('/rec', status_code=200)
-async def get_rec(page: int = 1, per_page: int = 50, anilist_access_token: Optional[str] = Cookie(None)):
+async def get_rec(page: int = 1, per_page: int = 50,
+                  session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
     query = '''
     query ($page: Int, $perPage: Int) {
         Page (page: $page, perPage: $perPage) {
@@ -57,7 +59,8 @@ async def get_rec(page: int = 1, per_page: int = 50, anilist_access_token: Optio
         'perPage': per_page
     }
     url = 'https://graphql.anilist.co'
-    headers = {'Authorization': "Bearer " + anilist_access_token}
+    token = get_anilist_token(int(Authorize.get_jwt_subject()), s=session)
+    headers = {'Authorization': "Bearer " + token}
 
     response = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
     return response.json()
