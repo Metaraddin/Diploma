@@ -16,8 +16,7 @@ security = HTTPBearer()
 
 
 @router.get("/curr", status_code=200, response_model=UserOut)
-async def get_current_user(session: Session = Depends(get_db),
-                   Authorize: AuthJWT = Depends(), auth: HTTPAuthorizationCredentials = Security(security)):
+async def get_current_user(session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
     Возвращает авторизованного пользователя.
     """
@@ -30,7 +29,7 @@ async def get_current_user(session: Session = Depends(get_db),
 
 @router.delete('/curr', status_code=200, response_model=UserOut)
 async def delete_current_user(session: Session = Depends(get_db),
-                              Authorize: AuthJWT = Depends(), auth: HTTPAuthorizationCredentials = Security(security)):
+                              Authorize: AuthJWT = Depends()):
     """
     Удаляет и возвращает авторизованного пользователя.
     """
@@ -40,7 +39,7 @@ async def delete_current_user(session: Session = Depends(get_db),
 
 @router.patch("/curr", status_code=200, response_model=UserOut)
 async def edit_current_user(user_info: UserUpdate, session: Session = Depends(get_db),
-                      Authorize: AuthJWT = Depends(), auth: HTTPAuthorizationCredentials = Security(security)):
+                      Authorize: AuthJWT = Depends()):
     """
     Перезаписывает поля у авторизованного пользователя.\n
     Необходимо указать **все запрошенные поля**.\n
@@ -112,7 +111,7 @@ async def edit_current_user_avatar(image: bytes = File(...), session: Session = 
 
 @router.delete("/avatar", status_code=200, response_model=UserOut)
 async def delete_current_user_avatar(session: Session = Depends(get_db),
-                                     Authorize: AuthJWT = Depends(), auth: HTTPAuthorizationCredentials = Security(security)):
+                                     Authorize: AuthJWT = Depends()):
     """
     Удаляет аватар пользователя по **user.id**.
     """

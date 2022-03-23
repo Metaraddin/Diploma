@@ -100,14 +100,14 @@ def delete_avatar_id(user_id: int, s: Session):
     return user
 
 
-def add_anilist_code(anilist_auth_code: str, user_id: int, s: Session):
+def set_anilist_token(anilist_token: str, user_id: int, s: Session):
     user = s.query(User).filter(User.id == user_id).first()
-    user.anilist_auth_code = anilist_auth_code
+    user.anilist_token = anilist_token
 
     s.add(user)
     s.commit()
-    return anilist_auth_code
+    return anilist_token
 
 
-def get_anilist_code(user_id: int, s: Session):
-    return s.query(User.anilist_auth_code).filter(User.id == user_id).first()
+def get_anilist_token(user_id: int, s: Session):
+    return s.query(User.anilist_token).filter(User.id == user_id).first()[0]

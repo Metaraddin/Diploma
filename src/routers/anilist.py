@@ -1,14 +1,19 @@
-from fastapi import APIRouter, Cookie
+from fastapi import APIRouter, Cookie, Depends
 from fastapi.security import HTTPBearer
 from typing import Optional
 import requests
+from sqlalchemy.orm import Session
+from fastapi_jwt_auth import AuthJWT
+from src.app.dependencies import get_db
+from src.repositories.user import get_anilist_token
 
 router = APIRouter(prefix="/anilist", tags=["Anilist"])
 security = HTTPBearer()
 
 
 @router.get("/", status_code=200)
-async def get_current_user_id(anilist_access_token: Optional[str] = Cookie(None)):
+async def get_current_user_id(session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
     query = '''
     query {
         Viewer {
@@ -17,7 +22,8 @@ async def get_current_user_id(anilist_access_token: Optional[str] = Cookie(None)
     }
     '''
     url = 'https://graphql.anilist.co'
-    headers = {'Authorization': "Bearer " + anilist_access_token}
+    token = get_anilist_token(int(Authorize.get_jwt_subject()), s=session)
+    headers = {'Authorization': "Bearer " + token}
 
     response = requests.post(url, json={'query': query}, headers=headers)
     return response.json()
