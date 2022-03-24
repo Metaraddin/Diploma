@@ -27,7 +27,6 @@ async def get_code():
     redirect_uri указан в настройках Anilist.\n
     **Swagger Ui не поддерживает перенаправление из-за CORS.**\n
     """
-    redirect_uri = 'https://tolocalhost.com/auth_anilist/callback'
     response_type = 'code'
     url = 'https://anilist.co/api/v2/oauth/authorize'
     return f'{url}?client_id={client_id}&response_type={response_type}'
