@@ -47,8 +47,19 @@ async def get_rec(page: int = 1, per_page: int = 50,
                 id
                 rating
                 userRating
+                mediaRecommendation {
+                    id
+                    title {
+                        romaji
+                        english
+                    }
+                }
                 media {
                     id
+                    title {
+                        romaji
+                        english
+                    }
                 }
             }
         }
@@ -63,4 +74,56 @@ async def get_rec(page: int = 1, per_page: int = 50,
     headers = {'Authorization': "Bearer " + token}
 
     response = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
+    return response.json()
+
+
+@router.get('/get', status_code=200)
+async def get_manga(uid: int):
+    query = '''
+    query ($id: Int) { # Define which variables will be used in the query (id)
+        Media (id: $id, type: MANGA) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
+            id
+            title {
+                romaji
+                english
+                native
+            }
+        }
+    }
+    '''
+    variables = {'id': uid}
+    url = 'https://graphql.anilist.co'
+    response = requests.post(url, json={'query': query, 'variables': variables})
+    return response.json()
+
+
+@router.get('/find', status_code=200)
+async def get_manga_by_name(name: str, page: int = 1, per_page: int = 50):
+    query = """
+    query ($id: Int, $page: Int, $perPage: Int, $search: String) {
+        Page (page: $page, perPage: $perPage) {
+            pageInfo {
+                total
+                currentPage
+                lastPage
+                hasNextPage
+                perPage
+            }
+            media (id: $id, search: $search, type: MANGA) {
+                id
+                title {
+                    romaji
+                    english
+                }
+            }
+        }
+    }
+    """
+    variables = {
+        'search': name,
+        'page': page,
+        'perPage': per_page
+    }
+    url = 'https://graphql.anilist.co'
+    response = requests.post(url, json={'query': query, 'variables': variables})
     return response.json()
