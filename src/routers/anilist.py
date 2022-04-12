@@ -7,6 +7,9 @@ from fastapi_jwt_auth import AuthJWT
 from src.app.dependencies import get_db
 from src.repositories.user import get_anilist_token
 
+import doctest
+import deal
+
 router = APIRouter(prefix="/anilist", tags=["Anilist"])
 security = HTTPBearer()
 
@@ -53,6 +56,7 @@ async def get_rec(page: int = 1, per_page: int = 50,
                         romaji
                         english
                     }
+                    type
                 }
                 media {
                     id
@@ -60,6 +64,7 @@ async def get_rec(page: int = 1, per_page: int = 50,
                         romaji
                         english
                     }
+                    type
                 }
             }
         }
@@ -77,17 +82,84 @@ async def get_rec(page: int = 1, per_page: int = 50,
     return response.json()
 
 
+@router.get('/rec_manga', status_code=200)
+async def get_manga_recommendations(manga_id: int, page = 1, per_page: int = 25):
+    query = '''
+    query ($page: Int, $perPage: Int, $mediaId: Int){
+        Page (page: $page perPage: $perPage) {
+            recommendations(mediaId: $mediaId) {
+                mediaRecommendation {
+                    id
+                    title {
+                        romaji
+                        english
+                    }
+                    type
+                }
+            }
+        }
+    }
+    '''
+    variables = {
+        'page': page,
+        'perPage': per_page,
+        'mediaId': manga_id
+    }
+    url = 'https://graphql.anilist.co'
+    response = requests.post(url, json={'query': query, 'variables': variables})
+    return response.json()
+
+
 @router.get('/get', status_code=200)
 async def get_manga(uid: int):
     query = '''
-    query ($id: Int) { # Define which variables will be used in the query (id)
-        Media (id: $id, type: MANGA) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
+    query ($id: Int) {
+        Media (id: $id, type: MANGA) {
             id
             title {
                 romaji
                 english
                 native
             }
+            startDate {
+                year
+                month
+                day
+            }
+            endDate {
+                year
+                month
+                day
+            }
+            description
+            chapters
+            volumes
+            countryOfOrigin
+            isLicensed
+            source
+            hashtag
+            updatedAt
+            coverImage {
+                extraLarge
+                large
+                medium
+            }
+            genres
+            staff {
+                nodes {
+                    id
+                    name {
+                        full
+                    }
+                }
+            }
+            studios {
+                nodes {
+                    id
+                    name
+                }
+            }
+            isAdult
         }
     }
     '''
