@@ -23,8 +23,8 @@ class Manga(BaseModel):
     source: Optional[str]
     cover_image_large_anilist_url: Optional[str]
     cover_image_medium_anilist_url: Optional[str]
-    cover_image: Optional[str]
-    genres: Optional[List[str]]
+    cover_id: Optional[int]
+    genres: Optional
     staff: Optional[List[str]]
     is_adult: bool = False
 
