@@ -43,17 +43,6 @@ async def login(user_info: UserLogin, session: Session = Depends(get_db), Author
     return user.create_user_token(id=curr_user.id, Authorize=Authorize)
 
 
-@router.get("/{id}", status_code=200, response_model=UserOut)
-async def get_user(id: int, session: Session = Depends(get_db)):
-    """
-    Возвращает пользователя по **user.id**
-    """
-    curr_user = user.get_user_by_id(id, session)
-    if not curr_user:
-        raise HTTPException(status_code=400, detail=[{'msg': 'User with this id does not exist'}])
-    return curr_user
-
-
 @router.get("/all", status_code=200, response_model=List[UserOut])
 async def get_all_user(limit: int = 100, skip: int = 0, session: Session = Depends(get_db)):
     """
@@ -137,3 +126,14 @@ async def delete_current_user_avatar(session: Session = Depends(get_db),
         raise HTTPException(status_code=400, detail=[{'msg': 'The user does not have an avatar'}])
     avatar.delete_avatar(curr_avatar.id, session)
     return user.delete_avatar_id(int(Authorize.get_jwt_subject()), session)
+
+
+@router.get("/{id}", status_code=200, response_model=UserOut)
+async def get_user(id: int, session: Session = Depends(get_db)):
+    """
+    Возвращает пользователя по **user.id**
+    """
+    curr_user = user.get_user_by_id(id, session)
+    if not curr_user:
+        raise HTTPException(status_code=400, detail=[{'msg': 'User with this id does not exist'}])
+    return curr_user
