@@ -33,7 +33,7 @@ async def get_code():
 async def callback(code: str, response: Response):
     """
     Функция обратного вызова авторизации на Anilist.\n
-    Принимает код авторизации.\n
+    Принимает код авторизации и сохраняет его в cookie\n
     """
     response.set_cookie(key='anilist_auth_code', value=code, httponly=True)
     return {"message": "Anilist auth code save in cookies"}
@@ -44,7 +44,7 @@ async def get_token(session: Session = Depends(get_db), Authorize: AuthJWT = Dep
                     anilist_auth_code: Optional[str] = Cookie(None)):
     """
     Использует код авторизации для получения Access Token.\n
-    Хранит токен в cookies
+    и сохраняет его в базу данных, закрепляя за текущим пользователем.
     """
     Authorize.jwt_required()
     anilist_code = anilist_auth_code
