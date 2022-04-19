@@ -89,7 +89,7 @@ async def edit_current_user(user_info: UserUpdate, session: Session = Depends(ge
     return curr_user
 
 
-@router.get("/curr/avatar", status_code=200, response_model=UserOut)
+@router.get("/avatar", status_code=200, response_model=UserOut)
 async def get_avatar(user_id: int, session: Session = Depends(get_db)):
     """
     Возвращает аватар пользователя по **user.id**.
@@ -101,9 +101,24 @@ async def get_avatar(user_id: int, session: Session = Depends(get_db)):
     return Response(content=curr_avatar.file, media_type='image/png')
 
 
+@router.get("/curr/avatar", status_code=200, response_model=UserOut)
+async def get_current_user_avatar(session: Session = Depends(get_db),
+                                  Authorize: AuthJWT = Depends()):
+    """
+    Возвращает аватар текущего пользователя.
+    """
+    Authorize.jwt_required()
+    curr_user = user.get_user_by_id(int(Authorize.get_jwt_subject()), session)
+    curr_avatar = avatar.get_avatar(curr_user.avatar_id, session)
+    if curr_avatar is None:
+        return FileResponse('src/avatars/user_default_avatar.png')
+    return Response(content=curr_avatar.file, media_type='image/png')
+
+
+
 @router.patch("/curr/avatar", status_code=200, response_model=UserOut)
 async def edit_current_user_avatar(image: bytes = File(...), session: Session = Depends(get_db),
-                      Authorize: AuthJWT = Depends(), auth: HTTPAuthorizationCredentials = Security(security)):
+                      Authorize: AuthJWT = Depends()):
     """
     Устанавливает аватар пользователя по **user.id**.\n
     Аватар хранится в отдельной таблице, user хранит только внешний ключ.
