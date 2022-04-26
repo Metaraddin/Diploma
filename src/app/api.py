@@ -13,9 +13,9 @@ from pydantic import BaseModel
 from src.app.tags import tags_metadata
 from src.db.database import engine, SessionLocal, DataBase
 from src.app.dependencies import get_db, get_settings
-from src.routers import user, anilist, auth_user, auth_anilist
+from src.routers import user, anilist
 
-app = FastAPI(title="Course backend", version="1.0", openapi_tags=tags_metadata,
+app = FastAPI(title="Дипломная работа", version="1.0", openapi_tags=tags_metadata,
               dependencies=[Depends(get_db)])
 
 origins = [
@@ -33,9 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_user.router)
 app.include_router(user.router)
-app.include_router(auth_anilist.router)
 app.include_router(anilist.router)
 
 settings = get_settings()

@@ -2,9 +2,12 @@ from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    authjwt_secret_key: str = "sercet"
-    postgres_url: str = "postgresql+psycopg2://postgres:000000@localhost/dpdb"
-    timeout: int = 5
+    authjwt_secret_key: str
+    postgres_url: str
+    timeout: int
+    client_secret: str
+    client_id: str
+    redirect_uri: str
 
     class Config:
-        env_file = '.env'
+        env_file = '../.env'

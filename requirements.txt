@@ -1,0 +1,9 @@
+uvicorn
+sqlalchemy
+fastapi
+fastapi_jwt_auth
+psycopg2
+pydantic[email]
+pydantic[dotenv]
+python-multipart
+requests
