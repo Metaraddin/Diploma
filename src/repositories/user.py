@@ -10,7 +10,7 @@ from src.models.token import Token
 from src.db.user import User
 
 
-def __hash_password(password: str, salt: str = None):
+def __hash_password(**password: str, salt: str = None):
     if salt is None:
         salt = "".join(random.choice(string.ascii_letters) for _ in range(12))
     enc = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 100_000)
