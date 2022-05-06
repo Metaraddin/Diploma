@@ -2,6 +2,7 @@ from fastapi import APIRouter, Cookie, Depends
 from fastapi.responses import RedirectResponse, Response
 from fastapi.security import HTTPBearer
 from typing import Optional
+from src.repositories import anilist
 import requests
 from sqlalchemy.orm import Session
 from fastapi_jwt_auth import AuthJWT
@@ -167,60 +168,7 @@ async def get_manga_recommendations(manga_id: int, page = 1, per_page: int = 25)
 
 @router.get('/get', status_code=200)
 async def get_manga(uid: int):
-    query = '''
-    query ($id: Int) {
-        Media (id: $id, type: MANGA) {
-            id
-            title {
-                romaji
-                english
-                native
-            }
-            startDate {
-                year
-                month
-                day
-            }
-            endDate {
-                year
-                month
-                day
-            }
-            description
-            chapters
-            volumes
-            countryOfOrigin
-            isLicensed
-            source
-            hashtag
-            updatedAt
-            coverImage {
-                extraLarge
-                large
-                medium
-            }
-            genres
-            staff {
-                nodes {
-                    id
-                    name {
-                        full
-                    }
-                }
-            }
-            studios {
-                nodes {
-                    id
-                    name
-                }
-            }
-            isAdult
-        }
-    }
-    '''
-    variables = {'id': uid}
-    url = 'https://graphql.anilist.co'
-    response = requests.post(url, json={'query': query, 'variables': variables})
+    response = anilist.get_manga(uid)
     return response.json()
 
 
