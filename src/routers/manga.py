@@ -1,16 +1,14 @@
-from typing import List
-
-from fastapi import APIRouter, Depends, HTTPException, Security, File
-from fastapi.responses import Response, FileResponse
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi_jwt_auth import AuthJWT
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 
 from src.app.dependencies import get_db
 from src.models.manga import MangaCreate, MangaOut
-from src.models.general import UserToken
-from src.repositories import manga, anilist
-
+from src.models.genre import GenreCreate
+from src.models.staff import StaffCreate
+from src.models.general import MangaGenreStaff
+from src.repositories import manga, anilist, genre, staff
 
 router = APIRouter(prefix="/manga", tags=["Manga"])
 security = HTTPBearer()
@@ -20,7 +18,8 @@ security = HTTPBearer()
 async def manual_create_manga(manga_info: MangaCreate, session: Session = Depends(get_db),
                               Authorize: AuthJWT = Depends()):
     """
-    Вручную создаёт новый тип манги (не физическую копию).
+    Ручное создание нового типа манги (не физическую копию).\n
+    Жанры и авторы добавляются отдельно.
     """
     curr_manga = manga.create_manga(m=manga_info, s=session)
     if not curr_manga:
@@ -28,14 +27,40 @@ async def manual_create_manga(manga_info: MangaCreate, session: Session = Depend
     return curr_manga
 
 
-@router.post("/auto", status_code=200, response_model=MangaOut)
+@router.post('/manual/genre', status_code=200, response_model=MangaGenreStaff)
+async def manual_add_genre(manga_id: int, genre_id: int, session: Session = Depends(get_db),
+                           Authorize: AuthJWT = Depends()):
+    """
+    Ручное добавление жарна.
+    """
+    curr = manga.add_genre(manga_id=manga_id, genre_id=genre_id, s=session)
+    if not curr:
+        raise HTTPException(status_code=400, detail=[{'msg': 'This genre already exists'}])
+    res = manga.get_manga_full(manga_id=manga_id, s=session)
+    return res
+
+
+@router.post('/manual/staff', status_code=200, response_model=MangaGenreStaff)
+async def manual_add_staff(manga_id: int, staff_id: int, session: Session = Depends(get_db),
+                           Authorize: AuthJWT = Depends()):
+    """
+    Ручное добавление автора.
+    """
+    curr_manga = manga.add_staff(manga_id=manga_id, staff_id=staff_id, s=session)
+    if not curr_manga:
+        raise HTTPException(status_code=400, detail=[{'msg': 'This staff already exists'}])
+    return manga.get_manga_full(manga_id=manga_id, s=session)
+
+
+@router.post("/auto", status_code=200, response_model=MangaGenreStaff)
 async def auto_create_manga(anilist_manga_uid: int, session: Session = Depends(get_db),
                             Authorize: AuthJWT = Depends()):
     """
-    Автоматически создаёт новый тип манги (не физическую копию), беря данные с Anilist.
+    Автоматическое создание нового типа манги (не физическую копию), беря данные с Anilist.\n
+    Автоматически заполняет жанры и авторов c Anilist.\n
+    При нахождении нового жанра/автора создаёт новую запись.
     """
     manga_json = anilist.get_manga(anilist_manga_uid).json()['data'].get('Media')
-    print(manga_json)
     manga_info = MangaCreate()
     manga_info.anilist_id = anilist_manga_uid
     manga_info.title_romaji = manga_json.get('title').get('romaji')
@@ -57,4 +82,30 @@ async def auto_create_manga(anilist_manga_uid: int, session: Session = Depends(g
     curr_manga = manga.create_manga(m=manga_info, s=session)
     if not curr_manga:
         raise HTTPException(status_code=400, detail=[{'msg': 'This manga already exists'}])
-    return curr_manga
+    if manga_json.get('genres'):
+        for genre_name in manga_json.get('genres'):
+            genre_id = genre.create_genre(GenreCreate(name=genre_name), s=session)
+            if not genre_id:
+                genre_id = genre.get_genre_by_name(genre_name, s=session).id
+            else:
+                genre_id = genre_id.id
+            manga.add_genre(manga_id=curr_manga.id, genre_id=genre_id, s=session)
+    if manga_json.get('staff'):
+        for node in manga_json.get('staff').get('nodes'):
+            staff_name = node.get('name').get('full')
+            staff_id = staff.create_staff(StaffCreate(name=staff_name), s=session)
+            if not staff_id:
+                staff_id = staff.get_staff_by_name(staff_name, s=session).id
+            else:
+                staff_id = staff_id.id
+            manga.add_staff(manga_id=curr_manga.id, staff_id=staff_id, s=session)
+    return manga.get_manga_full(manga_id=curr_manga.id, s=session)
+
+
+@router.get("/", status_code=200, response_model=MangaGenreStaff)
+async def get_manga(manga_id: int, session: Session = Depends(get_db),
+                    Authorize: AuthJWT = Depends()):
+    """
+    Получение манги.
+    """
+    return manga.get_manga_full(manga_id=manga_id, s=session)

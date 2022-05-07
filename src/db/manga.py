@@ -3,6 +3,7 @@ from src.db.database import DataBase
 from src.db.genre import Genre
 from src.db.cover import Cover
 from src.db.staff import Staff
+from src.db.genre import Genre
 
 
 class Manga(DataBase):
@@ -25,15 +26,13 @@ class Manga(DataBase):
     cover_image_large_anilist_url = Column(String, nullable=True)
     cover_image_medium_anilist_url = Column(String, nullable=True)
     cover_id = Column(Integer, ForeignKey(Cover.id), nullable=True)
-    # genres
-    # staff
     is_adult = Column(Boolean, nullable=True)
 
 
 class MangaGenre(DataBase):
     __tablename__ = 'manga_genre'
     manga_id = Column(Integer, ForeignKey(Manga.id), primary_key=True, nullable=False)
-    genre_id = Column(Integer, ForeignKey(Manga.id), primary_key=True, nullable=False)
+    genre_id = Column(Integer, ForeignKey(Genre.id), primary_key=True, nullable=False)
 
 
 class MangaStaff(DataBase):

@@ -1,8 +1,11 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
-from src.models.manga import MangaCreate
-from src.db.manga import Manga
+from src.models.manga import MangaCreate, MangaOut
+from src.models.general import MangaGenreStaff
+from src.db.manga import Manga, MangaGenre, MangaStaff
+from src.db.genre import Genre
+from src.db.staff import Staff
 
 
 def create_manga(m: MangaCreate, s: Session):
@@ -31,3 +34,40 @@ def create_manga(m: MangaCreate, s: Session):
         return manga
     except IntegrityError:
         return None
+
+
+def add_genre(manga_id: int, genre_id: int, s: Session):
+    manga_genre = MangaGenre()
+    manga_genre.manga_id = manga_id
+    manga_genre.genre_id = genre_id
+    s.add(manga_genre)
+    try:
+        s.commit()
+        return manga_genre
+    except IntegrityError:
+        return None
+
+
+def add_staff(manga_id: int, staff_id: int, s: Session):
+    manga_staff = MangaStaff()
+    manga_staff.manga_id = manga_id
+    manga_staff.staff_id = staff_id
+    s.add(manga_staff)
+    try:
+        s.commit()
+        return manga_staff
+    except IntegrityError:
+        return None
+
+
+def get_manga_full(manga_id: int, s: Session):
+    manga = s.query(Manga).filter(Manga.id == manga_id).first()
+    genres = s.query(Genre)\
+        .join(MangaGenre)\
+        .filter(Genre.id == MangaGenre.genre_id and MangaGenre.manga_id == manga_id)\
+        .all()
+    staff = s.query(Staff)\
+        .join(MangaStaff)\
+        .filter(Staff.id == MangaStaff.staff_id and MangaStaff.manga_id == manga_id)\
+        .all()
+    return MangaGenreStaff(Manga=manga, Genres=genres, Staff=staff)

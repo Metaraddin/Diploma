@@ -53,7 +53,7 @@ class MangaCreate(BaseModel):
 
 
 class MangaOut(BaseModel):
-    id: int
+    id: Optional[int]
     anilist_id: Optional[int]
     title_romaji: Optional[str]
     title_english: Optional[str]
