@@ -1,15 +1,15 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Security, File
+from fastapi import APIRouter, Depends, HTTPException, File
 from fastapi.responses import Response, FileResponse
 from fastapi_jwt_auth import AuthJWT
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 
 from src.app.dependencies import get_db
 from src.models.user import UserOut, UserUpdate, UserCreate, UserLogin
 from src.models.general import UserToken
-from src.repositories import user, avatar
+from src.repositories import user, image
 from src.models.token import Token
 
 
@@ -89,15 +89,15 @@ async def edit_current_user(user_info: UserUpdate, session: Session = Depends(ge
     return curr_user
 
 
-@router.get("/avatar", status_code=200, response_model=UserOut)
+@router.get("/avatar", status_code=200)
 async def get_avatar(user_id: int, session: Session = Depends(get_db)):
     """
     Возвращает аватар пользователя по **user.id**.
     """
     curr_user = user.get_user_by_id(user_id, s=session)
-    curr_avatar = avatar.get_avatar(curr_user.avatar_id, session)
+    curr_avatar = image.get_image(curr_user.avatar_id, session)
     if curr_avatar is None:
-        return FileResponse('src/avatars/user_default_avatar.png')
+        return FileResponse('static/user_default_avatar.png')
     return Response(content=curr_avatar.file, media_type='image/png')
 
 
@@ -109,22 +109,21 @@ async def get_current_user_avatar(session: Session = Depends(get_db),
     """
     Authorize.jwt_required()
     curr_user = user.get_user_by_id(int(Authorize.get_jwt_subject()), session)
-    curr_avatar = avatar.get_avatar(curr_user.avatar_id, session)
+    curr_avatar = image.get_image(curr_user.avatar_id, session)
     if curr_avatar is None:
-        return FileResponse('src/avatars/user_default_avatar.png')
+        return FileResponse('static/user_default_avatar.png')
     return Response(content=curr_avatar.file, media_type='image/png')
 
 
-
 @router.patch("/curr/avatar", status_code=200, response_model=UserOut)
-async def edit_current_user_avatar(image: bytes = File(...), session: Session = Depends(get_db),
+async def edit_current_user_avatar(image_file: bytes = File(...), session: Session = Depends(get_db),
                       Authorize: AuthJWT = Depends()):
     """
     Устанавливает аватар пользователя по **user.id**.\n
     Аватар хранится в отдельной таблице, user хранит только внешний ключ.
     """
     Authorize.jwt_required()
-    mapper = avatar.create_avatar(file=image, s=session)
+    mapper = image.create_image(file=image_file, s=session)
     return user.edit_avatar_id(user_id=int(Authorize.get_jwt_subject()), avatar_id=mapper.id, s=session)
 
 
@@ -136,11 +135,12 @@ async def delete_current_user_avatar(session: Session = Depends(get_db),
     """
     Authorize.jwt_required()
     curr_user = user.get_user_by_id(int(Authorize.get_jwt_subject()), s=session)
-    curr_avatar = avatar.get_avatar(curr_user.avatar_id, session)
+    curr_avatar = image.get_image(curr_user.avatar_id, session)
     if curr_avatar is None:
         raise HTTPException(status_code=400, detail=[{'msg': 'The user does not have an avatar'}])
-    avatar.delete_avatar(curr_avatar.id, session)
-    return user.delete_avatar_id(int(Authorize.get_jwt_subject()), session)
+    user.delete_avatar_id(user_id=int(Authorize.get_jwt_subject()), s=session)
+    image.delete_image(curr_avatar.id, session)
+    return user.get_user_by_id(int(Authorize.get_jwt_subject()), s=session)
 
 
 @router.get("/{id}", status_code=200, response_model=UserOut)

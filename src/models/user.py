@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr, validator, constr
 class UserOut(BaseModel):
     id: int
     email: EmailStr
+    avatar_id: Optional[int]
 
     class Config:
         orm_mode = True

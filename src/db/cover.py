@@ -1,8 +1,0 @@
-from sqlalchemy import Column, Integer, String, LargeBinary
-from src.db.database import DataBase
-
-
-class Cover(DataBase):
-    __tablename__ = 'cover'
-    id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
-    file = Column(LargeBinary, nullable=False)

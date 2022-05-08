@@ -66,15 +66,6 @@ def edit_user(u: UserUpdate, id: int, s: Session):
     return user
 
 
-def edit_walker_id(user_id: int, walker_id: int, s: Session):
-    user = s.query(User).filter(User.id == user_id).first()
-    user.walker_id = walker_id
-
-    s.add(user)
-    s.commit()
-    return user
-
-
 def delete_user(user_id: int, s: Session):
     user = s.query(User).filter(User.id == user_id).first()
     s.delete(user)

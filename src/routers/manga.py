@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, File
+from fastapi.responses import Response, FileResponse
 from fastapi_jwt_auth import AuthJWT
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
@@ -8,7 +9,10 @@ from src.models.manga import MangaCreate, MangaOut
 from src.models.genre import GenreCreate
 from src.models.staff import StaffCreate
 from src.models.general import MangaGenreStaff
-from src.repositories import manga, anilist, genre, staff
+from src.repositories import manga, anilist, genre, staff, image
+
+from typing import List
+import requests
 
 router = APIRouter(prefix="/manga", tags=["Manga"])
 security = HTTPBearer()
@@ -27,11 +31,11 @@ async def manual_create_manga(manga_info: MangaCreate, session: Session = Depend
     return curr_manga
 
 
-@router.post('/manual/genre', status_code=200, response_model=MangaGenreStaff)
-async def manual_add_genre(manga_id: int, genre_id: int, session: Session = Depends(get_db),
+@router.post('/genre', status_code=200, response_model=MangaGenreStaff)
+async def add_genre(manga_id: int, genre_id: int, session: Session = Depends(get_db),
                            Authorize: AuthJWT = Depends()):
     """
-    Ручное добавление жарна.
+    Добавление жарна.
     """
     curr = manga.add_genre(manga_id=manga_id, genre_id=genre_id, s=session)
     if not curr:
@@ -40,16 +44,54 @@ async def manual_add_genre(manga_id: int, genre_id: int, session: Session = Depe
     return res
 
 
-@router.post('/manual/staff', status_code=200, response_model=MangaGenreStaff)
-async def manual_add_staff(manga_id: int, staff_id: int, session: Session = Depends(get_db),
+@router.post('/staff', status_code=200, response_model=MangaGenreStaff)
+async def add_staff(manga_id: int, staff_id: int, session: Session = Depends(get_db),
                            Authorize: AuthJWT = Depends()):
     """
-    Ручное добавление автора.
+    Добавление автора.
     """
     curr_manga = manga.add_staff(manga_id=manga_id, staff_id=staff_id, s=session)
     if not curr_manga:
         raise HTTPException(status_code=400, detail=[{'msg': 'This staff already exists'}])
     return manga.get_manga_full(manga_id=manga_id, s=session)
+
+
+@router.get("/cover", status_code=200)
+async def get_cover(manga_id: int, session: Session = Depends(get_db)):
+    """
+    Возвращает обложку манги по **manga.id**.
+    """
+    curr_manga = manga.get_manga_by_id(manga_id, s=session)
+    curr_cover = image.get_image(curr_manga.cover_id, session)
+    if curr_cover is None:
+        return FileResponse('static/manga_default_cover.png')
+    return Response(content=curr_cover.file, media_type='image/png')
+
+
+@router.patch("/cover", status_code=200, response_model=MangaOut)
+async def edit_cover(manga_id: int, image_file: bytes = File(...), session: Session = Depends(get_db),
+                     Authorize: AuthJWT = Depends()):
+    """
+    Устанавливает обложку манги по **manga.id**.\n
+    Обложка хранится в отдельной таблице, manga хранит только внешний ключ.
+    """
+    mapper = image.create_image(file=image_file, s=session)
+    return manga.edit_cover_id(manga_id=manga_id, avatar_id=mapper.id, s=session)
+
+
+@router.delete("/cover", status_code=200, response_model=MangaOut)
+async def delete_cover(manga_id: int, session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    """
+    Удаляет обложку манги по **manga.id**.
+    """
+    Authorize.jwt_required()
+    curr_manga = manga.get_manga_by_id(manga_id, s=session)
+    curr_cover = image.get_image(curr_manga.cover_id, session)
+    if curr_cover is None:
+        raise HTTPException(status_code=400, detail=[{'msg': 'The user does not have an avatar'}])
+    manga.delete_cover_id(manga_id, s=session)
+    image.delete_image(curr_cover.id, session)
+    return manga.get_manga_by_id(manga_id, s=session)
 
 
 @router.post("/auto", status_code=200, response_model=MangaGenreStaff)
@@ -78,27 +120,27 @@ async def auto_create_manga(anilist_manga_uid: int, session: Session = Depends(g
     manga_info.source = manga_json.get('source')
     manga_info.cover_image_large_anilist_url = manga_json.get('coverImage').get('large')
     manga_info.cover_image_medium_anilist_url = manga_json.get('coverImage').get('medium')
+
+    cover_file = requests.get(manga_info.cover_image_large_anilist_url).content
+    cover = image.create_image(cover_file, s=session)
+
     manga_info.is_adult = manga_json.get('isAdult')
     curr_manga = manga.create_manga(m=manga_info, s=session)
+    manga.edit_cover_id(curr_manga.id, cover.id, s=session)
     if not curr_manga:
         raise HTTPException(status_code=400, detail=[{'msg': 'This manga already exists'}])
     if manga_json.get('genres'):
         for genre_name in manga_json.get('genres'):
-            genre_id = genre.create_genre(GenreCreate(name=genre_name), s=session)
-            if not genre_id:
-                genre_id = genre.get_genre_by_name(genre_name, s=session).id
-            else:
-                genre_id = genre_id.id
-            manga.add_genre(manga_id=curr_manga.id, genre_id=genre_id, s=session)
+            curr_genre = genre.get_genre_by_name(name=genre_name, s=session)
+            if not curr_genre:
+                curr_genre = genre.create_genre(GenreCreate(name=genre_name), s=session)
+            manga.add_genre(manga_id=curr_manga.id, genre_id=curr_genre.id, s=session)
     if manga_json.get('staff'):
         for node in manga_json.get('staff').get('nodes'):
-            staff_name = node.get('name').get('full')
-            staff_id = staff.create_staff(StaffCreate(name=staff_name), s=session)
-            if not staff_id:
-                staff_id = staff.get_staff_by_name(staff_name, s=session).id
-            else:
-                staff_id = staff_id.id
-            manga.add_staff(manga_id=curr_manga.id, staff_id=staff_id, s=session)
+            curr_staff = staff.get_staff_by_name(node.get('name').get('full'), s=session)
+            if not curr_staff:
+                curr_staff = staff.create_staff(StaffCreate(name=node.get('name').get('full')), s=session)
+            manga.add_staff(manga_id=curr_manga.id, staff_id=curr_staff.id, s=session)
     return manga.get_manga_full(manga_id=curr_manga.id, s=session)
 
 
@@ -109,3 +151,11 @@ async def get_manga(manga_id: int, session: Session = Depends(get_db),
     Получение манги.
     """
     return manga.get_manga_full(manga_id=manga_id, s=session)
+
+
+@router.get("/all", status_code=200, response_model=List[MangaOut])
+async def get_all_manga(limit: int = 100, skip: int = 0, session: Session = Depends(get_db)):
+    """
+    Получение краткого описания всей манги
+    """
+    return manga.get_all_manga(s=session, limit=limit, skip=skip)

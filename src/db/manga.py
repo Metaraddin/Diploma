@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Date, Boolean
 from src.db.database import DataBase
 from src.db.genre import Genre
-from src.db.cover import Cover
+from src.db.image import Image
 from src.db.staff import Staff
 from src.db.genre import Genre
 
@@ -25,7 +25,7 @@ class Manga(DataBase):
     source = Column(String, nullable=True)
     cover_image_large_anilist_url = Column(String, nullable=True)
     cover_image_medium_anilist_url = Column(String, nullable=True)
-    cover_id = Column(Integer, ForeignKey(Cover.id), nullable=True)
+    cover_id = Column(Integer, ForeignKey(Image.id), nullable=True)
     is_adult = Column(Boolean, nullable=True)
 
 

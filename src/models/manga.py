@@ -1,7 +1,5 @@
 from pydantic import BaseModel
-from src.models.token import Token
-from src.models.user import UserOut
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime, date
 
 
@@ -46,9 +44,6 @@ class MangaCreate(BaseModel):
     source: Optional[str]
     cover_image_large_anilist_url: Optional[str]
     cover_image_medium_anilist_url: Optional[str]
-    # cover_id
-    # genres
-    # staff
     is_adult: bool = False
 
 
@@ -70,9 +65,7 @@ class MangaOut(BaseModel):
     source: Optional[str]
     cover_image_large_anilist_url: Optional[str]
     cover_image_medium_anilist_url: Optional[str]
-    # cover_id
-    # genres
-    # staff
+    cover_id: Optional[int]
     is_adult: bool = False
 
     class Config:

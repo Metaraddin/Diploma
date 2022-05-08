@@ -60,14 +60,42 @@ def add_staff(manga_id: int, staff_id: int, s: Session):
         return None
 
 
+def get_manga_by_id(manga_id: int, s: Session):
+    return s.query(Manga).filter(Manga.id == manga_id).first()
+
+
+def get_all_manga(s: Session, limit: int = 100, skip: int = 0):
+    return s.query(Manga).limit(limit).offset(skip).all()
+
+
 def get_manga_full(manga_id: int, s: Session):
     manga = s.query(Manga).filter(Manga.id == manga_id).first()
     genres = s.query(Genre)\
+        .filter(MangaGenre.manga_id == manga_id) \
+        .filter(Genre.id == MangaGenre.genre_id) \
         .join(MangaGenre)\
-        .filter(Genre.id == MangaGenre.genre_id and MangaGenre.manga_id == manga_id)\
         .all()
-    staff = s.query(Staff)\
+    staff = s.query(Staff) \
+        .filter(MangaStaff.manga_id == manga_id) \
+        .filter(Staff.id == MangaStaff.staff_id) \
         .join(MangaStaff)\
-        .filter(Staff.id == MangaStaff.staff_id and MangaStaff.manga_id == manga_id)\
         .all()
     return MangaGenreStaff(Manga=manga, Genres=genres, Staff=staff)
+
+
+def edit_cover_id(manga_id: int, avatar_id: int, s: Session):
+    user = s.query(Manga).filter(Manga.id == manga_id).first()
+    user.cover_id = avatar_id
+
+    s.add(user)
+    s.commit()
+    return user
+
+
+def delete_cover_id(manga_id: int, s: Session):
+    user = s.query(Manga).filter(Manga.id == manga_id).first()
+    user.cover_id = None
+
+    s.add(user)
+    s.commit()
+    return user
