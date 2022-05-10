@@ -82,7 +82,7 @@ async def create_manga(manga_info: MangaCreate, session: Session = Depends(get_d
     return curr_manga
 
 
-@router.get("/{id}/", status_code=200, response_model=MangaGenreStaff)
+@router.get("/{id}", status_code=200, response_model=MangaGenreStaff)
 async def get_manga(manga_id: int, session: Session = Depends(get_db),
                     Authorize: AuthJWT = Depends()):
     """
@@ -91,7 +91,7 @@ async def get_manga(manga_id: int, session: Session = Depends(get_db),
     return manga.get_manga_full(manga_id=manga_id, s=session)
 
 
-@router.delete('/{id}/', status_code=200, response_model=MangaOut)
+@router.delete('/{id}', status_code=200, response_model=MangaOut)
 async def delete_manga(manga_id: int,
                      session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
@@ -100,7 +100,7 @@ async def delete_manga(manga_id: int,
     return manga.delete_manga(manga_id, s=session)
 
 
-@router.patch('/{id}/', status_code=200, response_model=MangaOut)
+@router.patch('/{id}', status_code=200, response_model=MangaOut)
 async def edit_manga(manga_id: int, manga_info: MangaEdit,
                      session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
@@ -144,7 +144,7 @@ async def get_all_manga(limit: int = 100, skip: int = 0, session: Session = Depe
     return manga.get_all_manga(s=session, limit=limit, skip=skip)
 
 
-@router.get("/{manga_id}/cover/", status_code=200)
+@router.get("/cover/{manga_id}", status_code=200)
 async def get_cover(manga_id: int, session: Session = Depends(get_db)):
     """
     Возвращает обложку манги по **manga.id**.
@@ -156,7 +156,7 @@ async def get_cover(manga_id: int, session: Session = Depends(get_db)):
     return Response(content=curr_cover.file, media_type='image/png')
 
 
-@router.patch("/{manga_id}/cover/", status_code=200, response_model=MangaOut)
+@router.patch("/cover/{manga_id}", status_code=200, response_model=MangaOut)
 async def edit_cover(manga_id: int, image_file: bytes = File(...), session: Session = Depends(get_db),
                      Authorize: AuthJWT = Depends()):
     """
@@ -167,7 +167,7 @@ async def edit_cover(manga_id: int, image_file: bytes = File(...), session: Sess
     return manga.edit_cover_id(manga_id=manga_id, avatar_id=mapper.id, s=session)
 
 
-@router.delete("/{manga_id}/cover/", status_code=200, response_model=MangaOut)
+@router.delete("/cover/{manga_id}", status_code=200, response_model=MangaOut)
 async def delete_cover(manga_id: int, session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
     Удаляет обложку манги по **manga.id**.

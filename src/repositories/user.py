@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from src.models.user import UserCreate, UserUpdate
 from src.models.token import Token
 from src.db.user import User
+from src.repositories import purchase
 
 
 def __hash_password(password: str, salt: str = None):
@@ -102,3 +103,11 @@ def set_anilist_token(anilist_token: str, user_id: int, s: Session):
 
 def get_anilist_token(user_id: int, s: Session):
     return s.query(User.anilist_token).filter(User.id == user_id).first()[0]
+
+
+def get_discount(user_id: int, s: Session):
+    user_count = purchase.count_user_not_canceled(user_id=user_id, s=s)
+    if user_count < 10:
+        return 2 * user_count
+    else:
+        return 10

@@ -4,7 +4,7 @@ from src.db.manga import Manga
 
 
 class Product(DataBase):
-    __tablename__ = 'Product'
+    __tablename__ = 'product'
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
     manga_id = Column(Integer, ForeignKey(Manga.id, ondelete='CASCADE'))
     volume = Column(Integer, nullable=True)

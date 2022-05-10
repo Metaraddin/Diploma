@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
 from src.models.product import ProductCreate, ProductEdit
 from src.db.product import Product
+from src.repositories import purchase
+from src.models.purchase import PurchaseCreate
+from datetime import datetime
 
 
 def create_product(manga_id: int, product_info: ProductCreate, s: Session):
@@ -64,3 +67,51 @@ def delete_product(product_id: int, s: Session):
     except:
         s.rollback()
         return None
+
+
+def get_price_from_user(user_id: int, product_id: int, s: Session):
+    product_price = s.query(Product).filter(Product.id == product_id).first().price_rub
+    user_count = purchase.count_user_not_canceled(user_id=user_id, s=s)
+    if user_count < 10:
+        return float(product_price) * (1 - (0.02 * user_count))
+    else:
+        return float(product_price) * 0.8
+
+
+def buy_product(user_id: int, product_id: int, s: Session):
+    product = s.query(Product).filter(Product.id == product_id).first()
+    if product.quantity <= 0:
+        return None
+    product.quantity -= 1
+    s.add(product)
+    try:
+        s.commit()
+    except:
+        s.rollback()
+        return
+    pc = PurchaseCreate(
+        user_id=user_id,
+        product_id=product_id,
+        price=get_price_from_user(user_id, product_id, s),
+        datetime=datetime.now())
+    return purchase.create_purchase(pc, s=s)
+
+
+def cancel_purchase(purchase_id: int, s: Session):
+    product_id = purchase.cancel_purchase(purchase_id=purchase_id, s=s).product_id
+    product = s.query(Product).filter(Product.id == product_id).first()
+    product.quantity += 1
+    s.add(product)
+    try:
+        s.commit()
+        return product.quantity
+    except:
+        s.rollback()
+
+
+def add_quantity(id: int, quantity: int, s: Session):
+    product = s.query(Product).filter(Product.id == id).first()
+    product.quantity += quantity
+    s.add(product)
+    s.commit()
+    return product

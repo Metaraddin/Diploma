@@ -6,6 +6,7 @@ class UserOut(BaseModel):
     id: int
     email: EmailStr
     avatar_id: Optional[int]
+    is_admin: bool
 
     class Config:
         orm_mode = True

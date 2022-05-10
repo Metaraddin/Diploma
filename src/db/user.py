@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean
 from src.db.database import DataBase
 from src.db.image import Image
 
@@ -10,3 +10,4 @@ class User(DataBase):
     hashed_password = Column(String, nullable=False)
     anilist_token = Column(String, nullable=True)
     avatar_id = Column(Integer, ForeignKey(Image.id), nullable=True)
+    is_admin = Column(Boolean, nullable=False, default=False)
