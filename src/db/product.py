@@ -3,8 +3,8 @@ from src.db.database import DataBase
 from src.db.manga import Manga
 
 
-class Manga(DataBase):
-    __tablename__ = 'manga'
+class Product(DataBase):
+    __tablename__ = 'Product'
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
     manga_id = Column(Integer, ForeignKey(Manga.id, ondelete='CASCADE'))
     volume = Column(Integer, nullable=True)

@@ -17,7 +17,7 @@ security = HTTPBearer()
 setting = get_settings()
 
 
-@router.get("/auth", response_class=RedirectResponse)
+@router.get("/auth/", response_class=RedirectResponse)
 async def get_code():
     """
     Перенаправляет на Anilist для авторизации,\n
@@ -30,7 +30,7 @@ async def get_code():
     return f'{url}?client_id={setting.client_id}&response_type={response_type}'
 
 
-@router.get('/auth/callback')
+@router.get('/auth/callback/')
 async def callback(code: str, response: Response):
     """
     Функция обратного вызова авторизации на Anilist.\n
@@ -40,7 +40,7 @@ async def callback(code: str, response: Response):
     return {"message": "Anilist auth code save in cookies"}
 
 
-@router.get('/auth/token')
+@router.get('/auth/token/')
 async def get_token(session: Session = Depends(get_db), Authorize: AuthJWT = Depends(),
                     anilist_auth_code: Optional[str] = Cookie(None)):
     """
@@ -68,7 +68,7 @@ async def get_token(session: Session = Depends(get_db), Authorize: AuthJWT = Dep
     return response.json()
 
 
-@router.get("/user/curr", status_code=200)
+@router.get("/user/curr/", status_code=200)
 async def get_current_user(session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     query = '''
@@ -88,7 +88,7 @@ async def get_current_user(session: Session = Depends(get_db), Authorize: AuthJW
     return response.json()
 
 
-@router.get('/rec', status_code=200)
+@router.get('/rec/', status_code=200)
 async def get_rec(page: int = 1, per_page: int = 50,
                   session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
@@ -138,7 +138,7 @@ async def get_rec(page: int = 1, per_page: int = 50,
     return response.json()
 
 
-@router.get('/rec_manga', status_code=200)
+@router.get('/rec_manga/', status_code=200)
 async def get_manga_recommendations(manga_id: int, page=1, per_page: int = 25):
     query = '''
     query ($page: Int, $perPage: Int, $mediaId: Int){
@@ -166,13 +166,13 @@ async def get_manga_recommendations(manga_id: int, page=1, per_page: int = 25):
     return response.json()
 
 
-@router.get('/get', status_code=200)
+@router.get('/get/', status_code=200)
 async def get_manga(uid: int):
     response = anilist.get_manga(uid)
     return response.json()
 
 
-@router.get('/find', status_code=200)
+@router.get('/find/', status_code=200)
 async def get_manga_by_name(name: str, page: int = 1, per_page: int = 50):
     query = """
     query ($id: Int, $page: Int, $perPage: Int, $search: String) {

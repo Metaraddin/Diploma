@@ -18,11 +18,12 @@ router = APIRouter(prefix="/manga", tags=["Manga"])
 security = HTTPBearer()
 
 
-@router.post("/auto", status_code=200, response_model=MangaGenreStaff)
+@router.post("/auto/", status_code=200, response_model=MangaGenreStaff)
 async def auto_create_manga(anilist_manga_uid: int, session: Session = Depends(get_db),
                             Authorize: AuthJWT = Depends()):
     """
     Автоматическое создание нового типа манги (не физическую копию), беря данные с Anilist.\n
+    Обновляет тип манги, если anilist_manga_uid уже найден.\n
     Автоматически заполняет жанры и авторов c Anilist.\n
     При нахождении нового жанра/автора создаёт новую запись.
     """
@@ -81,7 +82,7 @@ async def create_manga(manga_info: MangaCreate, session: Session = Depends(get_d
     return curr_manga
 
 
-@router.get("/{id}", status_code=200, response_model=MangaGenreStaff)
+@router.get("/{id}/", status_code=200, response_model=MangaGenreStaff)
 async def get_manga(manga_id: int, session: Session = Depends(get_db),
                     Authorize: AuthJWT = Depends()):
     """
@@ -90,7 +91,7 @@ async def get_manga(manga_id: int, session: Session = Depends(get_db),
     return manga.get_manga_full(manga_id=manga_id, s=session)
 
 
-@router.delete('/{id}', status_code=200, response_model=MangaOut)
+@router.delete('/{id}/', status_code=200, response_model=MangaOut)
 async def delete_manga(manga_id: int,
                      session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
@@ -99,7 +100,7 @@ async def delete_manga(manga_id: int,
     return manga.delete_manga(manga_id, s=session)
 
 
-@router.patch('/{id}', status_code=200, response_model=MangaOut)
+@router.patch('/{id}/', status_code=200, response_model=MangaOut)
 async def edit_manga(manga_id: int, manga_info: MangaEdit,
                      session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
@@ -110,7 +111,7 @@ async def edit_manga(manga_id: int, manga_info: MangaEdit,
     return manga.edit_manga(manga_id, manga_info, s=session)
 
 
-@router.post('/genre', status_code=200, response_model=MangaGenreStaff)
+@router.post('/genre/', status_code=200, response_model=MangaGenreStaff)
 async def add_genre(manga_id: int, genre_id: int, session: Session = Depends(get_db),
                            Authorize: AuthJWT = Depends()):
     """
@@ -123,7 +124,7 @@ async def add_genre(manga_id: int, genre_id: int, session: Session = Depends(get
     return res
 
 
-@router.post('/staff', status_code=200, response_model=MangaGenreStaff)
+@router.post('/staff/', status_code=200, response_model=MangaGenreStaff)
 async def add_staff(manga_id: int, staff_id: int, session: Session = Depends(get_db),
                     Authorize: AuthJWT = Depends()):
     """
@@ -135,7 +136,7 @@ async def add_staff(manga_id: int, staff_id: int, session: Session = Depends(get
     return manga.get_manga_full(manga_id=manga_id, s=session)
 
 
-@router.get("/all", status_code=200, response_model=List[MangaOut])
+@router.get("/all/", status_code=200, response_model=List[MangaOut])
 async def get_all_manga(limit: int = 100, skip: int = 0, session: Session = Depends(get_db)):
     """
     Получение краткого описания всей манги
@@ -143,7 +144,7 @@ async def get_all_manga(limit: int = 100, skip: int = 0, session: Session = Depe
     return manga.get_all_manga(s=session, limit=limit, skip=skip)
 
 
-@router.get("/{manga_id}/cover", status_code=200)
+@router.get("/{manga_id}/cover/", status_code=200)
 async def get_cover(manga_id: int, session: Session = Depends(get_db)):
     """
     Возвращает обложку манги по **manga.id**.
@@ -155,7 +156,7 @@ async def get_cover(manga_id: int, session: Session = Depends(get_db)):
     return Response(content=curr_cover.file, media_type='image/png')
 
 
-@router.patch("/{manga_id}/cover", status_code=200, response_model=MangaOut)
+@router.patch("/{manga_id}/cover/", status_code=200, response_model=MangaOut)
 async def edit_cover(manga_id: int, image_file: bytes = File(...), session: Session = Depends(get_db),
                      Authorize: AuthJWT = Depends()):
     """
@@ -166,7 +167,7 @@ async def edit_cover(manga_id: int, image_file: bytes = File(...), session: Sess
     return manga.edit_cover_id(manga_id=manga_id, avatar_id=mapper.id, s=session)
 
 
-@router.delete("/{manga_id}/cover", status_code=200, response_model=MangaOut)
+@router.delete("/{manga_id}/cover/", status_code=200, response_model=MangaOut)
 async def delete_cover(manga_id: int, session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
     Удаляет обложку манги по **manga.id**.

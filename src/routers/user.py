@@ -30,7 +30,7 @@ async def create_user(user_info: UserCreate, session: Session = Depends(get_db),
     return UserToken(User=curr_user, Token=token)
 
 
-@router.post("/login", status_code=200, response_model=Token)
+@router.post("/login/", status_code=200, response_model=Token)
 async def login(user_info: UserLogin, session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
     Возвращает access token пользователя в случае успешной проверки.
@@ -43,7 +43,7 @@ async def login(user_info: UserLogin, session: Session = Depends(get_db), Author
     return user.create_user_token(id=curr_user.id, Authorize=Authorize)
 
 
-@router.get("/all", status_code=200, response_model=List[UserOut])
+@router.get("/all/", status_code=200, response_model=List[UserOut])
 async def get_all_user(limit: int = 100, skip: int = 0, session: Session = Depends(get_db)):
     """
     Возвращает список всех пользователей.
@@ -51,7 +51,7 @@ async def get_all_user(limit: int = 100, skip: int = 0, session: Session = Depen
     return user.get_all_user(session, limit, skip)
 
 
-@router.get("/curr", status_code=200, response_model=UserOut)
+@router.get("/curr/", status_code=200, response_model=UserOut)
 async def get_current_user(session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
     Возвращает авторизованного пользователя.
@@ -63,7 +63,7 @@ async def get_current_user(session: Session = Depends(get_db), Authorize: AuthJW
     return curr_user
 
 
-@router.delete('/curr', status_code=200, response_model=UserOut)
+@router.delete('/curr/', status_code=200, response_model=UserOut)
 async def delete_current_user(session: Session = Depends(get_db),
                               Authorize: AuthJWT = Depends()):
     """
@@ -73,7 +73,7 @@ async def delete_current_user(session: Session = Depends(get_db),
     return user.delete_user(user_id=int(Authorize.get_jwt_subject()), s=session)
 
 
-@router.patch("/curr", status_code=200, response_model=UserOut)
+@router.patch("/curr/", status_code=200, response_model=UserOut)
 async def edit_current_user(user_info: UserUpdate, session: Session = Depends(get_db),
                       Authorize: AuthJWT = Depends()):
     """
@@ -89,7 +89,7 @@ async def edit_current_user(user_info: UserUpdate, session: Session = Depends(ge
     return curr_user
 
 
-@router.get("/{user_id}/avatar", status_code=200)
+@router.get("/{user_id}/avatar/", status_code=200)
 async def get_avatar(user_id: int, session: Session = Depends(get_db)):
     """
     Возвращает аватар пользователя по **user.id**.
@@ -101,7 +101,7 @@ async def get_avatar(user_id: int, session: Session = Depends(get_db)):
     return Response(content=curr_avatar.file, media_type='image/png')
 
 
-@router.get("/curr/avatar", status_code=200, response_model=UserOut)
+@router.get("/curr/avatar/", status_code=200, response_model=UserOut)
 async def get_current_user_avatar(session: Session = Depends(get_db),
                                   Authorize: AuthJWT = Depends()):
     """
@@ -115,7 +115,7 @@ async def get_current_user_avatar(session: Session = Depends(get_db),
     return Response(content=curr_avatar.file, media_type='image/png')
 
 
-@router.patch("/curr/avatar", status_code=200, response_model=UserOut)
+@router.patch("/curr/avatar/", status_code=200, response_model=UserOut)
 async def edit_current_user_avatar(image_file: bytes = File(...), session: Session = Depends(get_db),
                       Authorize: AuthJWT = Depends()):
     """
@@ -127,7 +127,7 @@ async def edit_current_user_avatar(image_file: bytes = File(...), session: Sessi
     return user.edit_avatar_id(user_id=int(Authorize.get_jwt_subject()), avatar_id=mapper.id, s=session)
 
 
-@router.delete("/curr/avatar", status_code=200, response_model=UserOut)
+@router.delete("/curr/avatar/", status_code=200, response_model=UserOut)
 async def delete_current_user_avatar(session: Session = Depends(get_db),
                                      Authorize: AuthJWT = Depends()):
     """
@@ -143,7 +143,7 @@ async def delete_current_user_avatar(session: Session = Depends(get_db),
     return user.get_user_by_id(int(Authorize.get_jwt_subject()), s=session)
 
 
-@router.get("/{id}", status_code=200, response_model=UserOut)
+@router.get("/{id}/", status_code=200, response_model=UserOut)
 async def get_user(id: int, session: Session = Depends(get_db)):
     """
     Возвращает пользователя по **user.id**
