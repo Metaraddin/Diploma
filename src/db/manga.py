@@ -9,7 +9,7 @@ from src.db.genre import Genre
 class Manga(DataBase):
     __tablename__ = 'manga'
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True, nullable=False)
-    anilist_id = Column(Integer, nullable=True)
+    anilist_id = Column(Integer, unique=True, nullable=True)
     title_romaji = Column(String, nullable=True)
     title_english = Column(String, nullable=True)
     title_russian = Column(String, nullable=True)

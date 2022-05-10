@@ -11,10 +11,10 @@ def create_genre(g: GenreCreate, s: Session):
     s.add(genre)
     try:
         s.commit()
-    except IntegrityError:
+        return genre
+    except:
         s.rollback()
         return None
-    return genre
 
 
 def get_genre_by_id(id: int, s: Session):

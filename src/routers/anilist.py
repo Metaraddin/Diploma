@@ -139,7 +139,7 @@ async def get_rec(page: int = 1, per_page: int = 50,
 
 
 @router.get('/rec_manga', status_code=200)
-async def get_manga_recommendations(manga_id: int, page = 1, per_page: int = 25):
+async def get_manga_recommendations(manga_id: int, page=1, per_page: int = 25):
     query = '''
     query ($page: Int, $perPage: Int, $mediaId: Int){
         Page (page: $page perPage: $perPage) {

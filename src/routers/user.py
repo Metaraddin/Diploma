@@ -89,7 +89,7 @@ async def edit_current_user(user_info: UserUpdate, session: Session = Depends(ge
     return curr_user
 
 
-@router.get("/avatar", status_code=200)
+@router.get("/{user_id}/avatar", status_code=200)
 async def get_avatar(user_id: int, session: Session = Depends(get_db)):
     """
     Возвращает аватар пользователя по **user.id**.

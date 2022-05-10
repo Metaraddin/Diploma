@@ -71,3 +71,19 @@ class MangaOut(BaseModel):
     class Config:
         orm_mode = True
 
+
+class MangaEdit(BaseModel):
+    title_romaji: Optional[str]
+    title_english: Optional[str]
+    title_russian: Optional[str]
+    title_native: Optional[str]
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+    description_english: Optional[str]
+    description_russian: Optional[str]
+    chapters: Optional[int]
+    volumes: Optional[int]
+    country_of_origin: Optional[str]
+    is_licensed: Optional[bool]
+    source: Optional[str]
+    is_adult: bool = False
