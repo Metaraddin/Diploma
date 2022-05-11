@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.repositories import user, genre, library
+from src.repositories import user, genre, library, anilist
 from src.db.genre import Genre
 from src.db.manga import MangaGenre, Manga
 from src.db.library import Library
@@ -38,7 +38,9 @@ def find_neighbors(obj_id: int, df: pd.DataFrame):
 
 def get_recommendation(user_id: int, s: Session, limit: int = 5):
     df = read_user_params(s=s)
+    print(df)
     corr = find_neighbors(obj_id=user_id, df=df)
+    print(corr)
     obj_user_manga = library.get_manga_from_user(user_id=user_id, s=s)
     result = []
     for i in corr:
@@ -49,3 +51,8 @@ def get_recommendation(user_id: int, s: Session, limit: int = 5):
                 if len(result) >= limit:
                     break
     return result
+
+
+def test(user_id: int, s: Session, limit: int = 50):
+    data = anilist.get_rec(user_id=user_id, s=s, page=1, per_page=50).json()
+    return data

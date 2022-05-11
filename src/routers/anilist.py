@@ -92,50 +92,7 @@ async def get_current_user(session: Session = Depends(get_db), Authorize: AuthJW
 async def get_rec(page: int = 1, per_page: int = 50,
                   session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    query = '''
-    query ($page: Int, $perPage: Int) {
-        Page (page: $page, perPage: $perPage) {
-            pageInfo {
-                total
-                currentPage
-                lastPage
-                hasNextPage
-                perPage
-            }
-            recommendations {
-                id
-                rating
-                userRating
-                mediaRecommendation {
-                    id
-                    title {
-                        romaji
-                        english
-                    }
-                    type
-                }
-                media (type: MANGA) {
-                    id
-                    title {
-                        romaji
-                        english
-                    }
-                    type
-                }
-            }
-        }
-    }
-    '''
-    variables = {
-        'page': page,
-        'perPage': per_page
-    }
-    url = 'https://graphql.anilist.co'
-    token = get_anilist_token(int(Authorize.get_jwt_subject()), s=session)
-    headers = {'Authorization': "Bearer " + token}
-
-    response = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
-    return response.json()
+    return anilist.get_rec(user_id=int(Authorize.get_jwt_subject()), page=page, per_page=per_page, s=session).json()
 
 
 @router.get('/rec_manga/', status_code=200)

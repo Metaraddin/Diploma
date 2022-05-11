@@ -154,3 +154,49 @@ def import_library(user_anilist_id: int, s: Session):
             curr_manga = manga.import_manga(line['media'], s=s)
             result.append(curr_manga.Manga.id)
     return result
+
+
+def get_rec(user_id: int, page: int, per_page: int, s: Session):
+    query = '''
+        query ($page: Int, $perPage: Int) {
+            Page (page: $page, perPage: $perPage) {
+                pageInfo {
+                    total
+                    currentPage
+                    lastPage
+                    hasNextPage
+                    perPage
+                }
+                recommendations {
+                    id
+                    rating
+                    userRating
+                    mediaRecommendation {
+                        id
+                        title {
+                            romaji
+                            english
+                        }
+                        type
+                    }
+                    media {
+                        id
+                        title {
+                            romaji
+                            english
+                        }
+                        type
+                    }
+                }
+            }
+        }
+        '''
+    variables = {
+        'page': page,
+        'perPage': per_page
+    }
+    url = 'https://graphql.anilist.co'
+    token = user.get_anilist_token(user_id, s=s)
+    headers = {'Authorization': "Bearer " + token}
+
+    return requests.post(url, json={'query': query, 'variables': variables}, headers=headers)

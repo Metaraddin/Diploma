@@ -47,3 +47,12 @@ async def get_recommendation(user_id: int, session: Session = Depends(get_db), A
     Выдаёт мангу из списка пользователй в соответсвии с сортировкой\n
     """
     return recommendations.get_recommendation(user_id=user_id, s=session)
+
+
+@router.get('/test_rec/', status_code=200)
+async def get_test_rec(user_id: int, limit: int = 100, session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    """
+    Рекомаедации с Anilist по токену
+    """
+    Authorize.jwt_required()
+    return recommendations.test(user_id=int(Authorize.get_jwt_subject()), s=session, limit=limit)
