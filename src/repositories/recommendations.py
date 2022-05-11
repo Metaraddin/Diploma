@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.repositories import user, genre, library, anilist
+from src.repositories import user, genre, library, anilist, manga
 from src.db.genre import Genre
 from src.db.manga import MangaGenre, Manga
 from src.db.library import Library
@@ -30,17 +30,15 @@ def read_user_params(s: Session):
     return params
 
 
-def find_neighbors(obj_id: int, df: pd.DataFrame):
+def find_neighbors(obj_id: int, df: pd.DataFrame, method='pearson'):
     obj = df.pop(obj_id)
-    result = [dict(user_id=s, corr=obj.corr(df.T.loc[s])) for s in df]
+    result = [dict(user_id=s, corr=obj.corr(df.T.loc[s], method=method)) for s in df]
     return sorted(result, key=lambda d: d['corr'], reverse=True)
 
 
-def get_recommendation(user_id: int, s: Session, limit: int = 5):
+def get_recommendation(user_id: int, s: Session, limit: int = 5, method='pearson'):
     df = read_user_params(s=s)
-    print(df)
-    corr = find_neighbors(obj_id=user_id, df=df)
-    print(corr)
+    corr = find_neighbors(obj_id=user_id, df=df, method=method)
     obj_user_manga = library.get_manga_from_user(user_id=user_id, s=s)
     result = []
     for i in corr:
@@ -51,8 +49,3 @@ def get_recommendation(user_id: int, s: Session, limit: int = 5):
                 if len(result) >= limit:
                     break
     return result
-
-
-def test(user_id: int, s: Session, limit: int = 50):
-    data = anilist.get_rec(user_id=user_id, s=s, page=1, per_page=50).json()
-    return data

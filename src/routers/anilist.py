@@ -7,7 +7,7 @@ import requests
 from sqlalchemy.orm import Session
 from fastapi_jwt_auth import AuthJWT
 from src.app.dependencies import get_db
-from src.repositories.user import get_anilist_token, set_anilist_token
+from src.repositories.user import set_anilist_token
 from src.app.dependencies import get_settings
 
 router = APIRouter(prefix="/anilist", tags=["Anilist"])
@@ -65,146 +65,35 @@ async def get_token(session: Session = Depends(get_db), Authorize: AuthJWT = Dep
     if response.status_code == 200 and response.json()['access_token']:
         set_anilist_token(anilist_token=response.json()['access_token'],
                           user_id=int(Authorize.get_jwt_subject()), s=session)
-    return response.json()
+    return response
 
 
 @router.get("/user/curr/", status_code=200)
 async def get_current_user(session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    query = '''
-    query {
-        Viewer {
-            id
-            name
-            siteUrl
-        }
-    }
-    '''
-    url = 'https://graphql.anilist.co'
-    token = get_anilist_token(int(Authorize.get_jwt_subject()), s=session)
-    headers = {'Authorization': "Bearer " + token}
-
-    response = requests.post(url, json={'query': query}, headers=headers)
-    return response.json()
+    return anilist.get_user(int(Authorize.get_jwt_subject()), s=session)
 
 
-@router.get('/rec/', status_code=200)
-async def get_rec(page: int = 1, per_page: int = 50,
-                  session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    return anilist.get_rec(user_id=int(Authorize.get_jwt_subject()), page=page, per_page=per_page, s=session).json()
+@router.get("/user/{user_id}", status_code=200)
+async def get_user(user_id: int, session: Session = Depends(get_db)):
+    return anilist.get_user(user_id, s=session)
 
 
-@router.get('/rec_manga/', status_code=200)
-async def get_manga_recommendations(manga_id: int, page=1, per_page: int = 100):
-    query = '''
-    query ($page: Int, $perPage: Int, $mediaId: Int){
-        Page (page: $page perPage: $perPage) {
-            recommendations(mediaId: $mediaId) {
-                mediaRecommendation {
-                    id
-                    title {
-                        romaji
-                        english
-                    }
-                    type
-                }
-            }
-        }
-    }
-    '''
-    variables = {
-        'page': page,
-        'perPage': per_page,
-        'mediaId': manga_id
-    }
-    url = 'https://graphql.anilist.co'
-    response = requests.post(url, json={'query': query, 'variables': variables})
-    return response.json()
+@router.get('/recommendations/{manga_id}', status_code=200)
+async def get_recommendations_to_manga(manga_id: int, page=1, per_page: int = 100):
+    return anilist.get_recommendations_to_manga(manga_id=manga_id, page=page, per_page=per_page)
 
 
-@router.get('/get/', status_code=200)
+@router.get('/get/{uid}', status_code=200)
 async def get_manga(uid: int):
-    response = anilist.get_manga(uid)
-    return response.json()
+    return anilist.get_manga(uid)
 
 
-@router.get('/find/', status_code=200)
+@router.get('/find/{name}', status_code=200)
 async def get_manga_by_name(name: str, page: int = 1, per_page: int = 50):
-    query = """
-    query ($id: Int, $page: Int, $perPage: Int, $search: String) {
-        Page (page: $page, perPage: $perPage) {
-            pageInfo {
-                total
-                currentPage
-                lastPage
-                hasNextPage
-                perPage
-            }
-            media (id: $id, search: $search, type: MANGA) {
-                id
-                title {
-                    romaji
-                    english
-                }
-            }
-        }
-    }
-    """
-    variables = {
-        'search': name,
-        'page': page,
-        'perPage': per_page
-    }
-    url = 'https://graphql.anilist.co'
-    response = requests.post(url, json={'query': query, 'variables': variables})
-    return response.json()
+    return anilist.get_manga_by_name(name=name, page=page, per_page=per_page)
 
 
 @router.get('/list/', status_code=200)
-async def get_manga_list(user_id: int, page: int = 1, per_page: int = 50,
-                         session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    query = """
-    query ($page: Int, $perPage: Int, $userId: Int) {
-        Page (page: $page, perPage: $perPage) {
-            pageInfo {
-                total
-                currentPage
-                lastPage
-                hasNextPage
-                perPage
-            }
-            mediaList (userId: $userId, type: MANGA) {
-                id
-                userId
-                status
-                progress
-                progressVolumes
-                repeat
-                priority
-                private
-                notes
-                hiddenFromStatusLists
-                media {
-                    id
-                    title {
-                        romaji
-                        english
-                    }
-                }
-            }
-        }
-    }
-    """
-    variables = {
-        'page': page,
-        'perPage': per_page,
-        'userId': user_id
-    }
-    url = 'https://graphql.anilist.co'
-    token = get_anilist_token(int(Authorize.get_jwt_subject()), s=session)
-    headers = {'Authorization': "Bearer " + token}
-
-    response = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
-    return response.json()
+async def get_manga_list(user_id: int, page: int = 1, per_page: int = 50):
+    return anilist.get_manga_list(user_id=user_id, page=page, per_page=per_page)

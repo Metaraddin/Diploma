@@ -58,7 +58,7 @@ def get_manga(uid: int):
         '''
     variables = {'id': uid}
     url = 'https://graphql.anilist.co'
-    return requests.post(url, json={'query': query, 'variables': variables})
+    return requests.post(url, json={'query': query, 'variables': variables}).json()
 
 
 def get_user_uid(user_id, s: Session):
@@ -150,15 +150,16 @@ def import_library(user_anilist_id: int, s: Session):
         response = requests.post(url, json={'query': query, 'variables': variables}).json()
         has_next_page = response['data']['Page']['pageInfo']['hasNextPage']
         for line in response['data']['Page']['mediaList']:
+            print(line)
             manga_id_list.append(line['media']['id'])
             curr_manga = manga.import_manga(line['media'], s=s)
             result.append(curr_manga.Manga.id)
     return result
 
 
-def get_rec(user_id: int, page: int, per_page: int, s: Session):
-    query = '''
-        query ($page: Int, $perPage: Int) {
+def get_manga_by_name(name: str, page: int = 1, per_page: int = 50):
+    query = """
+        query ($id: Int, $page: Int, $perPage: Int, $search: String) {
             Page (page: $page, perPage: $perPage) {
                 pageInfo {
                     total
@@ -167,19 +168,74 @@ def get_rec(user_id: int, page: int, per_page: int, s: Session):
                     hasNextPage
                     perPage
                 }
-                recommendations {
+                media (id: $id, search: $search, type: MANGA) {
                     id
-                    rating
-                    userRating
-                    mediaRecommendation {
+                    title {
+                        romaji
+                        english
+                    }
+                }
+            }
+        }
+        """
+    variables = {
+        'search': name,
+        'page': page,
+        'perPage': per_page
+    }
+    url = 'https://graphql.anilist.co'
+    return requests.post(url, json={'query': query, 'variables': variables}).json()
+
+
+def get_manga_list(user_id: int, page: int = 1, per_page: int = 50):
+    query = """
+        query ($page: Int, $perPage: Int, $userId: Int) {
+            Page (page: $page, perPage: $perPage) {
+                pageInfo {
+                    total
+                    currentPage
+                    lastPage
+                    hasNextPage
+                    perPage
+                }
+                mediaList (userId: $userId, type: MANGA) {
+                    id
+                    userId
+                    status
+                    progress
+                    progressVolumes
+                    repeat
+                    priority
+                    private
+                    notes
+                    hiddenFromStatusLists
+                    media {
                         id
                         title {
                             romaji
                             english
                         }
-                        type
                     }
-                    media {
+                }
+            }
+        }
+        """
+    variables = {
+        'page': page,
+        'perPage': per_page,
+        'userId': user_id
+    }
+    url = 'https://graphql.anilist.co'
+
+    return requests.post(url, json={'query': query, 'variables': variables}).json()
+
+
+def get_recommendations_to_manga(manga_id: int, page: int = 1, per_page: int = 50):
+    query = '''
+        query ($page: Int, $perPage: Int, $mediaId: Int){
+            Page (page: $page perPage: $perPage) {
+                recommendations(mediaId: $mediaId) {
+                    mediaRecommendation {
                         id
                         title {
                             romaji
@@ -193,10 +249,27 @@ def get_rec(user_id: int, page: int, per_page: int, s: Session):
         '''
     variables = {
         'page': page,
-        'perPage': per_page
+        'perPage': per_page,
+        'mediaId': manga_id
     }
     url = 'https://graphql.anilist.co'
+    return requests.post(url, json={'query': query, 'variables': variables}).json()
+
+
+def get_user(user_id: int, s: Session):
+    query = '''
+        query {
+            Viewer {
+                id
+                name
+                siteUrl
+            }
+        }
+        '''
+    url = 'https://graphql.anilist.co'
     token = user.get_anilist_token(user_id, s=s)
+    if not token:
+        return None
     headers = {'Authorization': "Bearer " + token}
 
-    return requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
+    return requests.post(url, json={'query': query}, headers=headers).json()

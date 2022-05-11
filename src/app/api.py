@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from src.app.tags import tags_metadata
 from src.db.database import engine, SessionLocal, DataBase
 from src.app.dependencies import get_db, get_settings
-from src.routers import user, anilist, manga, staff, genre, product, purchase, test, library
+from src.routers import user, anilist, manga, staff, genre, product, purchase, test, library, recommendations
 
 app = FastAPI(title="Дипломная работа", version="1.0", openapi_tags=tags_metadata,
               dependencies=[Depends(get_db)])
@@ -41,6 +41,7 @@ app.include_router(staff.router)
 app.include_router(product.router)
 app.include_router(purchase.router)
 app.include_router(anilist.router)
+app.include_router(recommendations.router)
 app.include_router(test.router)
 
 settings = get_settings()

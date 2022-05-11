@@ -108,6 +108,10 @@ def get_manga_by_id(manga_id: int, s: Session):
     return s.query(Manga).filter(Manga.id == manga_id).first()
 
 
+def get_manga_by_anilist_id(anilist_manga_id: int, s: Session):
+    return s.query(Manga).filter(Manga.id == anilist_manga_id).first()
+
+
 def get_all_manga(s: Session, limit: int = 100, skip: int = 0):
     return s.query(Manga).limit(limit).offset(skip).all()
 

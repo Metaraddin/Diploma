@@ -14,7 +14,7 @@ router = APIRouter(prefix="/test", tags=["Test"])
 security = HTTPBearer()
 
 
-@router.post("/import", status_code=200, response_model=List[int])
+@router.post("/import/", status_code=200, response_model=List[int])
 async def import_manga_list(anilist_user_uid: int, user_id: int = None,
                             session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
@@ -28,7 +28,7 @@ async def import_manga_list(anilist_user_uid: int, user_id: int = None,
     return response
 
 
-@router.post("/replenish", status_code=200)
+@router.post("/replenish/", status_code=200)
 async def replenish_product(product_info: ProductCreate,
                             session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
     """
@@ -39,20 +39,28 @@ async def replenish_product(product_info: ProductCreate,
         product.create_product(manga_id=curr_manga.id, product_info=product_info, s=session)
 
 
-@router.post("/dataset", status_code=200)
-async def get_recommendation(user_id: int, session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    """
-    Создаёт dataset с пользователями и процентным соотношением жанров\n
-    Сотрирует пользователей по коэффициенту корреляции\n
-    Выдаёт мангу из списка пользователй в соответсвии с сортировкой\n
-    """
-    return recommendations.get_recommendation(user_id=user_id, s=session)
+@router.get('/correlation/pearson/', status_code=200)
+async def correlation_coefficient_pearson(user_id: int,
+                                          session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    df = recommendations.read_user_params(s=session)
+    return recommendations.find_neighbors(obj_id=user_id, df=df, method='pearson')
 
 
-@router.get('/test_rec/', status_code=200)
-async def get_test_rec(user_id: int, limit: int = 100, session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    """
-    Рекомаедации с Anilist по токену
-    """
-    Authorize.jwt_required()
-    return recommendations.test(user_id=int(Authorize.get_jwt_subject()), s=session, limit=limit)
+@router.get('/correlation/spearman/', status_code=200)
+async def correlation_coefficient_spearman(user_id: int,
+                                           session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    df = recommendations.read_user_params(s=session)
+    return recommendations.find_neighbors(obj_id=user_id, df=df, method='spearman')
+
+
+@router.get('/correlation/kendall/', status_code=200)
+async def correlation_coefficient_kendall(user_id: int,
+                                          session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    df = recommendations.read_user_params(s=session)
+    return recommendations.find_neighbors(obj_id=user_id, df=df, method='kendall')
+
+
+@router.get('/dataset/', status_code=200)
+async def percentage_user_genres(session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    return recommendations.read_user_params(s=session)
+
