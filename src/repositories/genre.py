@@ -23,3 +23,7 @@ def get_genre_by_id(id: int, s: Session):
 
 def get_genre_by_name(name: str, s: Session):
     return s.query(Genre).filter(Genre.name == name).first()
+
+
+def get_all_genre(s: Session):
+    return s.query(Genre).all()

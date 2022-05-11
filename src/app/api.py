@@ -13,7 +13,7 @@ from pydantic import BaseModel
 from src.app.tags import tags_metadata
 from src.db.database import engine, SessionLocal, DataBase
 from src.app.dependencies import get_db, get_settings
-from src.routers import user, anilist, manga, staff, genre, product, purchase, test
+from src.routers import user, anilist, manga, staff, genre, product, purchase, test, library
 
 app = FastAPI(title="Дипломная работа", version="1.0", openapi_tags=tags_metadata,
               dependencies=[Depends(get_db)])
@@ -21,8 +21,8 @@ app = FastAPI(title="Дипломная работа", version="1.0", openapi_ta
 origins = [
     "http://localhost",
     "http://localhost:8000",
-    "http://anilist.co",
-    "https://anilist.co",
+    "http://127.0.0.1",
+    "http://127.0.0.1:8000"
 ]
 
 app.add_middleware(
@@ -34,6 +34,7 @@ app.add_middleware(
 )
 
 app.include_router(user.router)
+app.include_router(library.router)
 app.include_router(manga.router)
 app.include_router(genre.router)
 app.include_router(staff.router)

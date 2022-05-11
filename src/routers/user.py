@@ -156,13 +156,3 @@ async def get_user(id: int, session: Session = Depends(get_db)):
     if not curr_user:
         raise HTTPException(status_code=400, detail=[{'msg': 'User with this id does not exist'}])
     return curr_user
-
-
-@router.patch('/library', status_code=200, response_model=List[int])
-async def import_manga_list(session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
-    """
-    Имтортирует список манги с Anilist.
-    """
-    Authorize.jwt_required()
-    user_anilist_id = anilist.get_user_uid(int(Authorize.get_jwt_subject()), s=session)
-    return anilist.import_library(user_anilist_id=user_anilist_id, s=session)

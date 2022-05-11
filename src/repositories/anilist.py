@@ -80,6 +80,7 @@ def import_library(user_anilist_id: int, s: Session):
     has_next_page = True
     page = 1
     manga_id_list = []
+    result = []
     while has_next_page:
         query = '''
                 query ($page: Int, $perPage: Int, $userId: Int) {
@@ -150,6 +151,6 @@ def import_library(user_anilist_id: int, s: Session):
         has_next_page = response['data']['Page']['pageInfo']['hasNextPage']
         for line in response['data']['Page']['mediaList']:
             manga_id_list.append(line['media']['id'])
-            print(line['media'])
-            manga.import_manga(line['media'], s=s)
-    return manga_id_list
+            curr_manga = manga.import_manga(line['media'], s=s)
+            result.append(curr_manga.Manga.id)
+    return result

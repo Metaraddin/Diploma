@@ -7,3 +7,4 @@ pydantic[email]
 pydantic[dotenv]
 python-multipart
 requests
+pandas
