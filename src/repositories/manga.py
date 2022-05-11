@@ -6,6 +6,10 @@ from src.models.general import MangaGenreStaff
 from src.db.manga import Manga, MangaGenre, MangaStaff
 from src.db.genre import Genre
 from src.db.staff import Staff
+from src.repositories import anilist, image, genre, staff
+from src.models.genre import GenreCreate
+from src.models.staff import StaffCreate
+import requests
 
 
 def create_manga(m: MangaCreate, s: Session):
@@ -139,3 +143,52 @@ def delete_cover_id(manga_id: int, s: Session):
     s.add(user)
     s.commit()
     return user
+
+
+def import_manga_by_id(anilist_manga_uid: int, s: Session):
+    manga_json = anilist.get_manga(anilist_manga_uid).json()['data'].get('Media')
+    return import_manga(manga_json, s=s)
+
+
+def import_manga(manga_json: dict, s: Session):
+    manga_info = MangaCreate()
+    manga_info.anilist_id = manga_json.get('id')
+    manga_info.title_romaji = manga_json.get('title').get('romaji')
+    manga_info.title_english = manga_json.get('title').get('english')
+    manga_info.title_native = manga_json.get('title').get('native')
+    start_date = manga_json.get('startDate')
+    if start_date.get('year') and start_date.get('month') and start_date.get('day'):
+        manga_info.start_date = f"{start_date.get('year')}-{start_date.get('month')}-{start_date.get('day')}"
+    end_date = manga_json.get('endDate')
+    if end_date.get('year') and end_date.get('month') and end_date.get('day'):
+        manga_info.end_date = f"{end_date.get('year')}-{end_date.get('month')}-{end_date.get('day')}"
+    manga_info.description_english = manga_json.get('description')
+    manga_info.chapters = manga_json.get('chapters')
+    manga_info.volumes = manga_json.get('volumes')
+    manga_info.country_of_origin = manga_json.get('country_of_origin')
+    manga_info.is_licensed = manga_json.get('is_licensed')
+    manga_info.source = manga_json.get('source')
+    manga_info.cover_image_large_anilist_url = manga_json.get('coverImage').get('large')
+    manga_info.cover_image_medium_anilist_url = manga_json.get('coverImage').get('medium')
+
+    cover_file = requests.get(manga_info.cover_image_large_anilist_url).content
+    cover = image.create_image(cover_file, s=s)
+
+    manga_info.is_adult = manga_json.get('isAdult')
+    curr_manga = create_manga(m=manga_info, s=s)
+    edit_cover_id(curr_manga.id, cover.id, s=s)
+    if not curr_manga:
+        return None
+    if manga_json.get('genres'):
+        for genre_name in manga_json.get('genres'):
+            curr_genre = genre.get_genre_by_name(name=genre_name, s=s)
+            if not curr_genre:
+                curr_genre = genre.create_genre(GenreCreate(name=genre_name), s=s)
+            add_genre(manga_id=curr_manga.id, genre_id=curr_genre.id, s=s)
+    if manga_json.get('staff'):
+        for node in manga_json.get('staff').get('nodes'):
+            curr_staff = staff.get_staff_by_name(node.get('name').get('full'), s=s)
+            if not curr_staff:
+                curr_staff = staff.create_staff(StaffCreate(name=node.get('name').get('full')), s=s)
+            add_staff(manga_id=curr_manga.id, staff_id=curr_staff.id, s=s)
+    return get_manga_full(manga_id=curr_manga.id, s=s)

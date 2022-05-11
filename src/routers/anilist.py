@@ -114,7 +114,7 @@ async def get_rec(page: int = 1, per_page: int = 50,
                     }
                     type
                 }
-                media {
+                media (type: MANGA) {
                     id
                     title {
                         romaji
@@ -139,7 +139,7 @@ async def get_rec(page: int = 1, per_page: int = 50,
 
 
 @router.get('/rec_manga/', status_code=200)
-async def get_manga_recommendations(manga_id: int, page=1, per_page: int = 25):
+async def get_manga_recommendations(manga_id: int, page=1, per_page: int = 100):
     query = '''
     query ($page: Int, $perPage: Int, $mediaId: Int){
         Page (page: $page perPage: $perPage) {
@@ -201,4 +201,53 @@ async def get_manga_by_name(name: str, page: int = 1, per_page: int = 50):
     }
     url = 'https://graphql.anilist.co'
     response = requests.post(url, json={'query': query, 'variables': variables})
+    return response.json()
+
+
+@router.get('/list/', status_code=200)
+async def get_manga_list(user_id: int, page: int = 1, per_page: int = 50,
+                         session: Session = Depends(get_db), Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    query = """
+    query ($page: Int, $perPage: Int, $userId: Int) {
+        Page (page: $page, perPage: $perPage) {
+            pageInfo {
+                total
+                currentPage
+                lastPage
+                hasNextPage
+                perPage
+            }
+            mediaList (userId: $userId, type: MANGA) {
+                id
+                userId
+                status
+                progress
+                progressVolumes
+                repeat
+                priority
+                private
+                notes
+                hiddenFromStatusLists
+                media {
+                    id
+                    title {
+                        romaji
+                        english
+                    }
+                }
+            }
+        }
+    }
+    """
+    variables = {
+        'page': page,
+        'perPage': per_page,
+        'userId': user_id
+    }
+    url = 'https://graphql.anilist.co'
+    token = get_anilist_token(int(Authorize.get_jwt_subject()), s=session)
+    headers = {'Authorization': "Bearer " + token}
+
+    response = requests.post(url, json={'query': query, 'variables': variables}, headers=headers)
     return response.json()

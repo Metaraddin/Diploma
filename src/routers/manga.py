@@ -19,7 +19,7 @@ security = HTTPBearer()
 
 
 @router.post("/auto/", status_code=200, response_model=MangaGenreStaff)
-async def auto_create_manga(anilist_manga_uid: int, session: Session = Depends(get_db),
+async def import_manga(anilist_manga_uid: int, session: Session = Depends(get_db),
                             Authorize: AuthJWT = Depends()):
     """
     Автоматическое создание нового типа манги (не физическую копию), беря данные с Anilist.\n
@@ -27,46 +27,7 @@ async def auto_create_manga(anilist_manga_uid: int, session: Session = Depends(g
     Автоматически заполняет жанры и авторов c Anilist.\n
     При нахождении нового жанра/автора создаёт новую запись.
     """
-    manga_json = anilist.get_manga(anilist_manga_uid).json()['data'].get('Media')
-    manga_info = MangaCreate()
-    manga_info.anilist_id = anilist_manga_uid
-    manga_info.title_romaji = manga_json.get('title').get('romaji')
-    manga_info.title_english = manga_json.get('title').get('english')
-    manga_info.title_native = manga_json.get('title').get('native')
-    start_date = manga_json.get('startDate')
-    manga_info.start_date = f"{start_date.get('year')}-{start_date.get('month')}-{start_date.get('day')}"
-    end_date = manga_json.get('endDate')
-    manga_info.end_date = f"{end_date.get('year')}-{end_date.get('month')}-{end_date.get('day')}"
-    manga_info.description_english = manga_json.get('description')
-    manga_info.chapters = manga_json.get('chapters')
-    manga_info.volumes = manga_json.get('volumes')
-    manga_info.country_of_origin = manga_json.get('country_of_origin')
-    manga_info.is_licensed = manga_json.get('is_licensed')
-    manga_info.source = manga_json.get('source')
-    manga_info.cover_image_large_anilist_url = manga_json.get('coverImage').get('large')
-    manga_info.cover_image_medium_anilist_url = manga_json.get('coverImage').get('medium')
-
-    cover_file = requests.get(manga_info.cover_image_large_anilist_url).content
-    cover = image.create_image(cover_file, s=session)
-
-    manga_info.is_adult = manga_json.get('isAdult')
-    curr_manga = manga.create_manga(m=manga_info, s=session)
-    manga.edit_cover_id(curr_manga.id, cover.id, s=session)
-    if not curr_manga:
-        raise HTTPException(status_code=400, detail=[{'msg': 'This manga already exists'}])
-    if manga_json.get('genres'):
-        for genre_name in manga_json.get('genres'):
-            curr_genre = genre.get_genre_by_name(name=genre_name, s=session)
-            if not curr_genre:
-                curr_genre = genre.create_genre(GenreCreate(name=genre_name), s=session)
-            manga.add_genre(manga_id=curr_manga.id, genre_id=curr_genre.id, s=session)
-    if manga_json.get('staff'):
-        for node in manga_json.get('staff').get('nodes'):
-            curr_staff = staff.get_staff_by_name(node.get('name').get('full'), s=session)
-            if not curr_staff:
-                curr_staff = staff.create_staff(StaffCreate(name=node.get('name').get('full')), s=session)
-            manga.add_staff(manga_id=curr_manga.id, staff_id=curr_staff.id, s=session)
-    return manga.get_manga_full(manga_id=curr_manga.id, s=session)
+    return manga.import_manga_by_id(anilist_manga_uid=anilist_manga_uid, s=session)
 
 
 @router.post("/", status_code=200, response_model=MangaOut)

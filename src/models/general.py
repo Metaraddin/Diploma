@@ -11,6 +11,9 @@ class UserToken(BaseModel):
     User: Optional[UserOut]
     Token: Optional[Token]
 
+    class Config:
+        orm_mode = True
+
 
 class MangaGenreStaff(BaseModel):
     Manga: Optional[MangaOut]
