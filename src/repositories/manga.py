@@ -150,7 +150,7 @@ def delete_cover_id(manga_id: int, s: Session):
 
 
 def import_manga_by_id(anilist_manga_uid: int, s: Session):
-    manga_json = anilist.get_manga(anilist_manga_uid).json()['data'].get('Media')
+    manga_json = anilist.get_manga(anilist_manga_uid)['data'].get('Media')
     return import_manga(manga_json, s=s)
 
 
