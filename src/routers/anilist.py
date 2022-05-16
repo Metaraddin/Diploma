@@ -65,7 +65,7 @@ async def get_token(session: Session = Depends(get_db), Authorize: AuthJWT = Dep
     if response.status_code == 200 and response.json()['access_token']:
         set_anilist_token(anilist_token=response.json()['access_token'],
                           user_id=int(Authorize.get_jwt_subject()), s=session)
-    return response
+    return response.json()
 
 
 @router.get("/user/curr/", status_code=200)
